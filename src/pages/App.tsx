@@ -1,20 +1,19 @@
 import { Box } from "@mui/material";
-import ActiveDevices from "../elements/ActiveDevices ";
-import FileChooser from "../elements/FileChooser";
-import IncomingRequests from "../elements/IncomingRequests";
-import OutgoingRequests from "../elements/OutgoingRequests";
+import ChatView from "../components/ChatView";
+import SideView from "../components/SideView";
 
-export default function App() {
+const App = () => {
 
-
-  return (
-    <Box display='flex' gap={1}>
-      <IncomingRequests />
-      <Box display='flex' flexDirection='column'>
-        <ActiveDevices />
-        <FileChooser />
-      </Box>
-      <OutgoingRequests />
-    </Box>
-  )
+    return (
+        <Box display='flex'>
+            <Box flex={1}>
+                <SideView />
+            </Box>
+            <Box flex={4}>
+                <ChatView />
+            </Box>
+        </Box>
+    )
 }
+
+export default App;
