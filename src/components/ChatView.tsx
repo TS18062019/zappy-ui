@@ -7,26 +7,19 @@ import FilePreview from "../atoms/FilePreview";
 import FolderPreview from "../atoms/FolderPreview";
 import EmptyChatPage from "../pages/EmptyChatPage";
 import Headers from "../atoms/Headers";
-
-type Message = {
-    id: number;
-    text: string;
-    sender: "me" | "other";
-    type?: "file" | "folder",
-    size?: string
-};
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "../stores/store";
+import { addMessage, type MessageData } from "../reducers/chatReducer";
 
 export default function ChatView({
     selectedChat
 }: any) {
-    const [messages, setMessages] = useState<Message[]>([
-        { id: 1, text: "Hey!", sender: "other" },
-        { id: 2, text: "Hi, how are you?", sender: "me" },
-        { id: 3, type: "file", text: "file.zip", size: "1 GB", sender: "other" },
-        { id: 3, type: "file", text: "anotherFile.zip", size: "500 MB", sender: "me" },
-        { id: 3, type: "folder", text: "notes", sender: "other" },
-        { id: 3, type: "folder", text: "music", sender: "me" }
-    ]);
+
+    const messages = useSelector((state: RootState) => {
+        const device = state.chat.messages.find(msg => msg.destinationDeviceId === '1234');
+        return device?.data || [];
+    });
+    const dispatch = useDispatch();
 
     const [input, setInput] = useState("");
     const [anchorEl, setAnchorEl] = useState(null);
@@ -34,10 +27,7 @@ export default function ChatView({
 
     const handleSend = () => {
         if (!input.trim()) return;
-        setMessages([
-            ...messages,
-            { id: messages.length + 1, text: input, sender: "me" },
-        ]);
+        dispatch(addMessage({ deviceId: '1234', msgData: { delivered: false, sender: 'me', payload: input } }));
         setInput("");
     };
 
@@ -49,12 +39,12 @@ export default function ChatView({
         setAnchorEl(null);
     }
 
-    function getView(msg: Message): import("react").ReactNode {
+    function getView(msg: MessageData): import("react").ReactNode {
         if (msg?.type === 'file')
-            return <FilePreview name={msg.text} size={msg.size} />
+            return <FilePreview name={msg.payload} size={msg.size} />
         else if (msg?.type === 'folder')
-            return <FolderPreview name={msg.text} />
-        return <Typography variant="body1">{msg.text}</Typography>
+            return <FolderPreview name={msg.payload} />
+        return <Typography variant="body1">{msg.payload}</Typography>
     }
 
     return (
@@ -64,8 +54,8 @@ export default function ChatView({
                 <Box
                     display="flex"
                     flexDirection="column"
-                    height="88vh"
-                    bgcolor="#f0f2f5"
+                    height="89vh"
+                    bgcolor="#e3eeff"
                     p={2}
                 >{/* Messages area */}
                     <Stack
@@ -81,9 +71,9 @@ export default function ChatView({
                             msOverflowStyle: "none",
                         }}
                     >
-                        {messages.map((msg) => (
+                        {messages.map((msg, idx) => (
                             <Box
-                                key={msg.id}
+                                key={idx}
                                 display="flex"
                                 justifyContent={
                                     msg.sender === "me" ? "flex-end" : "flex-start"

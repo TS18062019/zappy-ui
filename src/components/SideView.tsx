@@ -39,6 +39,10 @@ const SideView = ({
 
     const [peerDiscoveryStarted, setPeerDiscoveryStarted] = useState(false);
 
+    const stopPeerDiscovery = () => {
+        setPeerDiscoveryStarted(false);
+    }
+
     const getChatSideview = () => {
         return (
             <>
@@ -109,7 +113,7 @@ const SideView = ({
     return (
         <Box
             position="relative"
-            height="88vh"
+            height="89vh"
             width="100%"
             maxWidth={360}
             bgcolor="background.paper"
@@ -119,7 +123,7 @@ const SideView = ({
                 !peerDiscoveryStarted ? (
                     getChatSideview()
                 ) : (
-                    <PeerDiscoveryView />
+                    <PeerDiscoveryView handleClose={stopPeerDiscovery}/>
                 )
             }
 
