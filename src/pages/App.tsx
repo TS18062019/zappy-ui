@@ -1,22 +1,29 @@
 import { Box } from "@mui/material";
 import ChatView from "../components/ChatView";
 import SideView from "../components/SideView";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Headers from "../atoms/Headers";
 import { getCredentials } from "../network/networkClient";
+import { useDispatch } from "react-redux";
 
 const App = () => {
 
+    const dispatch = useDispatch();
+
     const [selectedChat, setSelectedChat] = useState();
+    const runOnceRef = useRef(false);
 
     useEffect(() => {
+        if (runOnceRef.current)
+            return;
+        runOnceRef.current = true;
         getCredentials().then(cred => {
             const url = new URL('/ws/text', window.location.href);
             url.protocol = 'ws:';
             url.port = '8080';
             url.searchParams.set('deviceId', cred.deviceId);
             url.searchParams.set('sign', cred.sign);
-            console.log(url);
+            dispatch({ type: 'WS_START', payload: { url: url.toString() } });
         });
     }, []);
 

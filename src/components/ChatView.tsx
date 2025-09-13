@@ -9,7 +9,7 @@ import EmptyChatPage from "../pages/EmptyChatPage";
 import Headers from "../atoms/Headers";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../stores/store";
-import { addMessage, type MessageData } from "../reducers/chatReducer";
+import type { MessageData } from "../reducers/chatReducer";
 
 export default function ChatView({
     selectedChat
@@ -27,7 +27,7 @@ export default function ChatView({
 
     const handleSend = () => {
         if (!input.trim()) return;
-        dispatch(addMessage({ deviceId: '1234', msgData: { delivered: false, sender: 'me', payload: input } }));
+        dispatch({type: "SEND_MESSAGE", payload: { destinationDeviceId: '1234', destinationIp: '192.168.0.102', data: [{ delivered: false, sender: 'me', payload: input }] }});
         setInput("");
     };
 

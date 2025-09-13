@@ -7,5 +7,5 @@ export const getCredentials = async () => {
     const resp = await fetch(url, {
         method: "GET",
     }).then(resp => resp.json());
-    return JSON.parse(resp);
+    return resp;
 }

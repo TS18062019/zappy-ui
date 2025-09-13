@@ -8,14 +8,14 @@ export type MessageData = {
     delivered: boolean
 }
 
-type WebSocketTextMessageStoreState = {
+export type WebSocketTextMessage = {
     destinationDeviceId: string,
     destinationIp: string,
     data: MessageData[]
 }
 
 type TextMessages = {
-    messages: WebSocketTextMessageStoreState[]
+    messages: WebSocketTextMessage[]
 }
 
 const initialState: TextMessages = {
@@ -70,17 +70,17 @@ const chatSlice = createSlice({
     name: "chat",
     initialState,
     reducers: {
-        addMessage: (state, action: PayloadAction<{ deviceId: string, msgData: MessageData, desnIp?: string }>) => {
-            const { deviceId, msgData, desnIp } = action.payload;
+        addMessage: (state, action: PayloadAction<{ destinationDeviceId: string, msgData: MessageData, destinationIp?: string }>) => {
+            const { destinationDeviceId, msgData, destinationIp } = action.payload;
             const existing = state.messages.find(
-                (msg) => msg.destinationDeviceId === deviceId
+                (msg) => msg.destinationDeviceId === destinationDeviceId
             );
             if (existing) {
                 existing.data.push(msgData);
             } else {
                 state.messages.push({
-                    destinationDeviceId: deviceId,
-                    destinationIp: desnIp || '',
+                    destinationDeviceId: destinationDeviceId,
+                    destinationIp: destinationIp || '',
                     data: [msgData],
                 });
             }
