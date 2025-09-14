@@ -4,7 +4,8 @@ export type Device = {
     deviceId: string,
     ipAddr: string,
     name: string,
-    sign?: string;
+    sign?: string,
+    type?: 'phone' | 'pc'
 }
 
 type DeviceList = {
@@ -25,9 +26,14 @@ const deviceSlice = createSlice({
         removeDevice: (state, action: PayloadAction<Device>) => {
             const { deviceId } = action.payload;
             state.devices = state.devices.filter(dev => dev.deviceId !== deviceId);
+        },
+        addAllDevices: (state, action: PayloadAction<DeviceList>) => {
+            state.devices = [
+                ...action.payload.devices
+            ]
         }
     }
 })
 
-export const { addDevice, removeDevice } = deviceSlice.actions;
+export const { addDevice, removeDevice, addAllDevices } = deviceSlice.actions;
 export default deviceSlice.reducer;

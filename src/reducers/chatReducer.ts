@@ -8,6 +8,12 @@ export type MessageData = {
     delivered: boolean
 }
 
+export type Command = {
+    destinationDeviceId: string,
+    destinationIp: string,
+    command: "DISCOVER_PEERS" | "STOP_DISCOVERY"
+}
+
 export type WebSocketTextMessage = {
     destinationDeviceId: string,
     destinationIp: string,
@@ -21,8 +27,8 @@ type TextMessages = {
 const initialState: TextMessages = {
     messages: [
         {
-            destinationDeviceId: '1234',
-            destinationIp: '123.456.789',
+            destinationDeviceId: '06663155-557c-4b5d-9f11-7357c5148ad4',
+            destinationIp: '192.168.0.105',
             data: [
                 {
                     delivered: false,

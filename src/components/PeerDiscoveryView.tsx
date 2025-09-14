@@ -3,28 +3,19 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
 import LaptopIcon from '@mui/icons-material/Laptop';
 import CircleIcon from '@mui/icons-material/Circle';
-
-const data = [
-    { id: 1, type: 'phone', name: 'S23', ip: '192.168.0.105' },
-    { id: 2, type: 'pc', name: 'POCO M3', ip: '192.168.0.101' },
-    { id: 3, type: 'phone', name: 'POCO X5', ip: '192.168.0.103' },
-    { id: 4, type: 'phone', name: 'MSI', ip: '192.168.0.107' },
-    { id: 5, type: 'pc', name: 'ASUS', ip: '192.168.0.109' },
-    { id: 1, type: 'phone', name: 'S23', ip: '192.168.0.105' },
-    { id: 2, type: 'phone', name: 'POCO M3', ip: '192.168.0.101' },
-    { id: 3, type: 'pc', name: 'POCO X5', ip: '192.168.0.103' },
-    { id: 4, type: 'phone', name: 'MSI', ip: '192.168.0.107' },
-    { id: 5, type: 'phone', name: 'ASUS', ip: '192.168.0.109' },
-    { id: 1, type: 'pc', name: 'S23', ip: '192.168.0.105' },
-    { id: 2, type: 'phone', name: 'POCO M3', ip: '192.168.0.101' },
-    { id: 3, type: 'phone', name: 'POCO X5', ip: '192.168.0.103' },
-    { id: 4, type: 'phone', name: 'MSI', ip: '192.168.0.107' },
-    { id: 5, type: 'pc', name: 'ASUS', ip: '192.168.0.109' }
-]
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "../stores/store";
 
 const PeerDiscoveryView = ({
     handleClose
 }: any) => {
+
+    const devices = useSelector((state: RootState) => state.device.devices);
+    const dispatch = useDispatch();
+
+    const onClickDevice = (index: number) => {
+        dispatch({type: 'ADD_CONNECTION', payload: {device: devices[index]}});
+    }
 
     return (
         <Box flexGrow={1} gap={4} p={1}>
@@ -46,10 +37,10 @@ const PeerDiscoveryView = ({
                 mt: 2
             }}>
                 {
-                    data.map((key, idx) => {
+                    devices.map((key, idx) => {
                         return (
                             <>
-                                <ListItem key={idx} alignItems="center" sx={{
+                                <ListItem key={idx} onClick={() => onClickDevice(idx)} alignItems="center" sx={{
                                     transition: "all 0.2s ease",
                                     "&:hover": {
                                         bgcolor: "grey.100",
@@ -67,7 +58,7 @@ const PeerDiscoveryView = ({
                                     <ListItemText primary={key.name} secondary={
                                         <Typography component="span"
                                             variant="body2"
-                                            sx={{ color: "text.primary", display: "inline" }}>{key.ip}</Typography>
+                                            sx={{ color: "text.primary", display: "inline" }}>{key.ipAddr}</Typography>
                                     } />
                                     <Box sx={{ display: "flex", alignItems: "center", ml: "auto" }}>
                                         <CircleIcon sx={{ color: "green", height: 10, width: 10 }} />

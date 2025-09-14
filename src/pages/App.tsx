@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import Headers from "../atoms/Headers";
 import { getCredentials } from "../network/networkClient";
 import { useDispatch } from "react-redux";
+import { addDevice } from "../reducers/deviceReducer";
 
 const App = () => {
 
@@ -24,11 +25,12 @@ const App = () => {
             url.searchParams.set('deviceId', cred.deviceId);
             url.searchParams.set('sign', cred.sign);
             dispatch({ type: 'WS_START', payload: { url: url.toString() } });
+            dispatch(addDevice({deviceId: cred.serverId, ipAddr: cred.serverIp, name: cred.name}));
         });
     }, []);
 
     return (
-        <Box display='flex'>
+        <Box display='flex' >
             <Box display='flex' flexDirection='column' flex={1}>
                 <Headers text='Zappy' fontColor='primary' fontVariant='h5' noBorder />
                 <SideView setSelectedChat={setSelectedChat} />
