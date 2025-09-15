@@ -15,6 +15,7 @@ import EmptySideView from "../pages/EmptySideView";
 import PeerDiscoveryView from "./PeerDiscoveryView";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../stores/store";
+import type { ConnectedDevice } from "../reducers/connectionReducer";
 
 // const data: any[] = [
 //     { id: 1, a: 'Brunch this weekend?', b: 'Ali Connors', c: ' — I\'ll be in your neighborhood doing errands this…' },
@@ -23,7 +24,7 @@ import type { RootState } from "../stores/store";
 
 const SideView = ({
     setSelectedChat
-}: any) => {
+}: {setSelectedChat: React.Dispatch<React.SetStateAction<ConnectedDevice | null>>}) => {
 
     const [peerDiscoveryStarted, setPeerDiscoveryStarted] = useState(false);
     const server = useSelector((state: RootState) => state.device.devices.find(s => s.name === 'server'));
@@ -59,7 +60,7 @@ const SideView = ({
                                 connections.map((key, idx) => {
                                     return (
                                         <>
-                                            <ListItem onClick={() => setSelectedChat({ idx: idx, name: key.device.name })} key={idx} alignItems="flex-start" sx={{
+                                            <ListItem onClick={() => setSelectedChat(connections[idx])} key={idx} alignItems="flex-start" sx={{
                                                 transition: "all 0.2s ease",
                                                 "&:hover": {
                                                     bgcolor: "grey.100",

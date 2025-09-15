@@ -9,17 +9,18 @@ import EmptyChatPage from "../pages/EmptyChatPage";
 import Headers from "../atoms/Headers";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../stores/store";
-import { addMessage, type MessageData } from "../reducers/chatReducer";
+import { type MessageData } from "../reducers/chatReducer";
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import type { ConnectedDevice } from "../reducers/connectionReducer";
 
 export default function ChatView({
     selectedChat
-}: any) {
+}: { selectedChat: ConnectedDevice | null }) {
 
     const messages = useSelector((state: RootState) => {
         const device = state.chat.messages.find(
-            msg => msg.destinationDeviceId === '06663155-557c-4b5d-9f11-7357c5148ad4'
+            msg => msg.destinationDeviceId === selectedChat?.device.deviceId
         );
         return device?.data || [];
     });
@@ -31,11 +32,7 @@ export default function ChatView({
 
     const handleSend = () => {
         if (!input.trim()) return;
-        dispatch(addMessage({
-            destinationDeviceId: '06663155-557c-4b5d-9f11-7357c5148ad4',
-            destinationIp: '192.168.0.105',
-            msgData: { sender: 'me', payload: input, delivered: false }
-        }));
+        dispatch({ type: 'SEND_MESSAGE', payload: { destinationDeviceId: selectedChat?.device.deviceId, destinationIp: selectedChat?.device.ipAddr, data: [{ sender: 'me', payload: input, delivered: false }] } });
         setInput("");
     };
 
@@ -63,9 +60,9 @@ export default function ChatView({
     }
 
     return (
-        selectedChat?.idx >= 0 ? (
+        selectedChat?.device ? (
             <Box flex={4} sx={{ border: '1px solid #f2e7e7' }}>
-                <Headers text={selectedChat.name} />
+                <Headers text={selectedChat.device.name} />
                 <Box
                     display="flex"
                     flexDirection="column"
@@ -107,7 +104,7 @@ export default function ChatView({
                                         <Box display="flex" justifyContent="flex-end" position="absolute" alignItems="center" bottom={1} right={1} p={1}>
                                             {
                                                 msg.delivered ? <DoneAllIcon sx={{ fontSize: 16, color: '#34B7F1' }} />
-                                                : msg.type === undefined && <AccessTimeIcon sx={{ fontSize: 12, color: 'grey' }} />
+                                                    : msg.type === undefined && <AccessTimeIcon sx={{ fontSize: 12, color: 'grey' }} />
                                             }
                                         </Box>
                                     )}

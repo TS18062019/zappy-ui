@@ -25,50 +25,7 @@ type TextMessages = {
 }
 
 const initialState: TextMessages = {
-    messages: [
-        {
-            destinationDeviceId: '06663155-557c-4b5d-9f11-7357c5148ad4',
-            destinationIp: '192.168.0.105',
-            data: [
-                {
-                    delivered: false,
-                    sender: 'other',
-                    payload: 'Hey!',
-                },
-                {
-                    delivered: false,
-                    sender: 'me',
-                    payload: 'Hi, how are you?',
-                },
-                {
-                    delivered: false,
-                    sender: 'other',
-                    payload: 'file.zip',
-                    type: 'file',
-                    size: '1 GB'
-                },
-                {
-                    delivered: false,
-                    sender: 'me',
-                    payload: 'anotherFile.zip',
-                    type: 'file',
-                    size: '500 MB'
-                },
-                {
-                    delivered: false,
-                    sender: 'other',
-                    payload: 'notes',
-                    type: 'folder'
-                },
-                {
-                    delivered: false,
-                    sender: 'me',
-                    payload: 'music',
-                    type: 'folder'
-                }
-            ]
-        }
-    ]
+    messages: []
 }
 
 

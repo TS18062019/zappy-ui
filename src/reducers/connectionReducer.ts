@@ -11,14 +11,7 @@ type Connections = {
 }
 
 const initialState: Connections = {
-    connections: [{
-        device: {
-            deviceId: '06663155-557c-4b5d-9f11-7357c5148ad4',
-            name: 'server',
-            ipAddr: '192.168.0.105'
-        },
-        isActive: true
-    }]
+    connections: []
 }
 
 const connectionSlice = createSlice({

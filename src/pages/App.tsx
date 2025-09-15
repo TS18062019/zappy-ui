@@ -5,13 +5,14 @@ import { useState, useEffect, useRef } from "react";
 import Headers from "../atoms/Headers";
 import { getCredentials } from "../network/networkClient";
 import { useDispatch } from "react-redux";
-import { addDevice } from "../reducers/deviceReducer";
+import { addAllDevices } from "../reducers/deviceReducer";
+import type { ConnectedDevice } from "../reducers/connectionReducer";
 
 const App = () => {
 
     const dispatch = useDispatch();
 
-    const [selectedChat, setSelectedChat] = useState();
+    const [selectedChat, setSelectedChat] = useState<ConnectedDevice | null>(null);
     const runOnceRef = useRef(false);
 
     useEffect(() => {
@@ -25,7 +26,12 @@ const App = () => {
             url.searchParams.set('deviceId', cred.deviceId);
             url.searchParams.set('sign', cred.sign);
             dispatch({ type: 'WS_START', payload: { url: url.toString() } });
-            dispatch(addDevice({deviceId: cred.serverId, ipAddr: cred.serverIp, name: cred.name}));
+            dispatch(addAllDevices({
+                devices: [
+                    { deviceId: cred.serverId, ipAddr: cred.serverIp, name: cred.name },
+                    { deviceId: cred.deviceId, ipAddr: url.hostname, name: 'this' }
+                ]
+            }))
         });
     }, []);
 

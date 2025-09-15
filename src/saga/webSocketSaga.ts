@@ -1,20 +1,22 @@
 import { END, eventChannel } from "redux-saga";
-import { apply, call, cancelled, fork, put, take, takeEvery, takeLatest } from "redux-saga/effects";
+import { apply, call, cancelled, fork, put, select, take, takeEvery, takeLatest } from "redux-saga/effects";
 import { addMessage, type Command, type WebSocketTextMessage } from "../reducers/chatReducer";
 import { wsConnect, wsDisconnect } from "../reducers/webSocketReducer";
 import { createWebsocketConn } from "../network/websocketClient";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import { addAllDevices } from "../reducers/deviceReducer";
+import { addAllDevices, type Device } from "../reducers/deviceReducer";
 import { addConnection, type ConnectedDevice } from "../reducers/connectionReducer";
+import type { RootState } from "../stores/store";
 
 function createSocketChannel(socket: WebSocket) {
     return eventChannel(emit => {
         socket.onmessage = event => {
             try {
                 const data = JSON.parse(event.data);
-                data.type === 'peerMap' ?
-                    emit({ type: 'INCOMING_PEERS', payload: data.payload })
-                    : emit({ type: 'INCOMING_MESSAGE', payload: data });
+                if(data?.payload?.peerMap)
+                    emit({ type: 'INCOMING_PEERS', payload: data.payload.peerMap })
+                else 
+                    emit({ type: 'INCOMING_MESSAGE', payload: data });
             } catch (err) {
                 console.error("Invalid ws message", err);
             }
@@ -69,30 +71,35 @@ function* channelWatcher(socket: WebSocket): any {
     }
 }
 
-function* watchOutgoingMessages(socket: WebSocket): any {
+function* watchOutgoingMessages(socket: WebSocket, thisDevice: Device): any {
     yield takeEvery('SEND_MESSAGE', function* (action: PayloadAction<WebSocketTextMessage>) {
         const payload: WebSocketTextMessage = action.payload;
-        const dataToSend = { destinationDeviceId: payload.destinationDeviceId, destinationIp: payload.destinationIp, msgData: payload.data };
-        const dataToStore = {
-            ...dataToSend,
-            msgData: payload.data[0]
+        const dataToStore = { destinationDeviceId: payload.destinationDeviceId, destinationIp: payload.destinationIp, msgData: payload.data[0] };
+        const dataToSend = {
+            ...dataToStore,
+            msgData: payload.data,
+            sourceDeviceId: thisDevice.deviceId,
+            sourceIp: thisDevice.ipAddr,
+            type: "request"
         }
         yield apply(socket, socket.send, [JSON.stringify(dataToSend)])
         yield put(addMessage(dataToStore));
     });
     yield takeEvery('SEND_COMMAND', function* (action: PayloadAction<Command>) {
-        yield apply(socket, socket.send, [JSON.stringify(action.payload)]);
+        let payload = {
+            ...action.payload,
+            type: "request"
+        }
+        yield apply(socket, socket.send, [JSON.stringify(payload)]);
     });
 }
 
-function* watchConnections(socket: WebSocket): any {
-    let regex = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/;
+function* watchConnections(socket: WebSocket, thisDevice: Device): any {
     yield takeEvery('ADD_CONNECTION', function* (action: PayloadAction<ConnectedDevice>) {
         const payload: ConnectedDevice = action.payload;
-        const ip = regex.exec(payload.device?.ipAddr)?.[0];
-        const dataToSend = { destinationDeviceId: payload.device.deviceId, destinationIp: ip, msgData: [] };
+        const dataToSend = { type: "request", destinationDeviceId: payload.device.deviceId, destinationIp: payload.device.ipAddr, sourceDeviceId: thisDevice.deviceId, sourceIp: thisDevice.ipAddr, msgData: [] };
         yield apply(socket, socket.send, [JSON.stringify(dataToSend)]);
-        yield put(addConnection({...payload, isActive: true}));
+        yield put(addConnection({ ...payload, isActive: true }));
     });
 }
 
@@ -100,11 +107,11 @@ function* handleWebsocket(url: string): any {
     try {
         const socket = yield call(createWebsocketConn, url);
         yield put(wsConnect());
-
+        const thisDevice: Device = yield select((state: RootState) => state.device.devices.find(dev => dev.name === 'this'));
         // listen for incoming & outgoing messages
         yield fork(channelWatcher, socket);
-        yield fork(watchConnections, socket);
-        yield fork(watchOutgoingMessages, socket);
+        yield fork(watchConnections, socket, thisDevice);
+        yield fork(watchOutgoingMessages, socket, thisDevice);
 
     } catch (err) {
         console.error("WS connection failed", err);
