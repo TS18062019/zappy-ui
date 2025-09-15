@@ -48,13 +48,16 @@ const chatSlice = createSlice({
                 });
             }
         },
-        markDelivered: (state, action: PayloadAction<{ deviceId: string, index: number }>) => {
-            const { deviceId, index } = action.payload;
+        markDelivered: (state, action: PayloadAction<{ deviceId: string }>) => {
+            const { deviceId } = action.payload;
             const messageGroup = state.messages.find(
                 (msg) => msg.destinationDeviceId === deviceId
             );
-            if (messageGroup?.data[index]) {
-                messageGroup.data[index].delivered = true;
+            let lastIndex = 0;
+            if(messageGroup?.data.length && messageGroup?.data.length > 0)
+                lastIndex = messageGroup?.data.length - 1;
+            if (messageGroup?.data[lastIndex]) {
+                messageGroup.data[lastIndex].delivered = true;
             }
         },
         setMessages: (state, action: PayloadAction<{ msgs: TextMessages }>) => {

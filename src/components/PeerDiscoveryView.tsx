@@ -15,6 +15,7 @@ const PeerDiscoveryView = ({
 
     const onClickDevice = (index: number) => {
         dispatch({type: 'ADD_CONNECTION', payload: {device: devices[index]}});
+        handleClose();
     }
 
     return (

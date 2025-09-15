@@ -1,6 +1,6 @@
 import { END, eventChannel } from "redux-saga";
 import { apply, call, cancelled, fork, put, select, take, takeEvery, takeLatest } from "redux-saga/effects";
-import { addMessage, type Command, type WebSocketTextMessage } from "../reducers/chatReducer";
+import { addMessage, markDelivered, type Command, type WebSocketTextMessage } from "../reducers/chatReducer";
 import { wsConnect, wsDisconnect } from "../reducers/webSocketReducer";
 import { createWebsocketConn } from "../network/websocketClient";
 import type { PayloadAction } from "@reduxjs/toolkit";
@@ -15,8 +15,10 @@ function createSocketChannel(socket: WebSocket) {
                 const data = JSON.parse(event.data);
                 if(data?.payload?.peerMap)
                     emit({ type: 'INCOMING_PEERS', payload: data.payload.peerMap })
-                else 
+                else if(data?.msgData)
                     emit({ type: 'INCOMING_MESSAGE', payload: data });
+                else
+                    emit({ type: 'DELIVERY_STATUS', payload: data })
             } catch (err) {
                 console.error("Invalid ws message", err);
             }
@@ -61,6 +63,9 @@ function* channelWatcher(socket: WebSocket): any {
                 }
                 if (deviceList.length > 0)
                     yield put(addAllDevices({ devices: deviceList }))
+            } else {
+                if(action.payload.status)
+                    yield put(markDelivered({deviceId: action.payload.sourceDeviceId}))
             }
         }
     } finally {
@@ -80,6 +85,7 @@ function* watchOutgoingMessages(socket: WebSocket, thisDevice: Device): any {
             msgData: payload.data,
             sourceDeviceId: thisDevice.deviceId,
             sourceIp: thisDevice.ipAddr,
+            requiresResponse: true,
             type: "request"
         }
         yield apply(socket, socket.send, [JSON.stringify(dataToSend)])
