@@ -1,21 +1,24 @@
 import { END, eventChannel } from "redux-saga";
 import { apply, call, cancelled, fork, put, select, take, takeEvery, takeLatest } from "redux-saga/effects";
-import { addMessage, markDelivered, type Command, type WebSocketTextMessage } from "../reducers/chatReducer";
+import { addMessage, markDelivered, type StorableMessage } from "../reducers/chatReducer";
 import { wsConnect, wsDisconnect } from "../reducers/webSocketReducer";
 import { createWebsocketConn } from "../network/websocketClient";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import { addAllDevices, type Device } from "../reducers/deviceReducer";
-import { addConnection, type ConnectedDevice } from "../reducers/connectionReducer";
+import { addAllDevices, addDevice, type Device, type DeviceList } from "../reducers/deviceReducer";
 import type { RootState } from "../stores/store";
+import type { CommandToSaga, TextMessageToServer, TextResponseFromServer, TextToSaga } from "../utils/types";
+import { buildCommandMessage, buildDeviceFromTextMessage, buildDeviceListFromIncomingPeers, buildStorableMessage, buildTextMessage } from "../utils/utils";
+import { getFromDump } from "../utils/dump";
+import { THIS_DEVICE_NAME } from "../constants/consants";
 
 function createSocketChannel(socket: WebSocket) {
     return eventChannel(emit => {
         socket.onmessage = event => {
             try {
                 const data = JSON.parse(event.data);
-                if(data?.payload?.peerMap)
-                    emit({ type: 'INCOMING_PEERS', payload: data.payload.peerMap })
-                else if(data?.msgData)
+                if (data?.payload?.peerMap)
+                    emit({ type: 'INCOMING_PEERS', payload: data })
+                else if (data?.msgData)
                     emit({ type: 'INCOMING_MESSAGE', payload: data });
                 else
                     emit({ type: 'DELIVERY_STATUS', payload: data })
@@ -41,31 +44,20 @@ function* channelWatcher(socket: WebSocket): any {
         while (true) {
             const action = yield take(socketChannel);
             if (action.type === 'INCOMING_MESSAGE') {
-                const data = action.payload;
-                yield put(addMessage({
-                    destinationDeviceId: data.destinationDeviceId,
-                    destinationIp: data.destinationIp,
-                    msgData: {
-                        ...data.msgData,
-                        sender: 'other',
-                        delivered: true
-                    }
-                }));
-            } else if (action.type === 'INCOMING_PEERS') {
-                const deviceList = [];
-                for (const devId of Object.keys(action.payload)) {
-                    const obj = action.payload[devId];
-                    deviceList.push({
-                        deviceId: devId,
-                        ipAddr: obj.ipAddr,
-                        name: obj.name
-                    });
+                const data: TextMessageToServer = action.payload;
+                const device: Device = buildDeviceFromTextMessage(data, true);
+                if(data.msgData && data.msgData.length === 1) {
+                    const dataToStore: StorableMessage = buildStorableMessage(device, data.msgData[0], true);
+                    yield put(addMessage(dataToStore));
                 }
-                if (deviceList.length > 0)
-                    yield put(addAllDevices({ devices: deviceList }))
-            } else {
-                if(action.payload.status)
-                    yield put(markDelivered({deviceId: action.payload.sourceDeviceId}))
+                yield put(addDevice(device));
+            } else if (action.type === 'INCOMING_PEERS') {
+                const response: TextResponseFromServer = action.payload;
+                const deviceList: DeviceList = buildDeviceListFromIncomingPeers(response);
+                if (deviceList.devices.length > 0)
+                    yield put(addAllDevices(deviceList));
+            } else if (action.payload.status) {
+                yield put(markDelivered({ deviceId: action.payload.sourceDeviceId }))
             }
         }
     } finally {
@@ -77,35 +69,25 @@ function* channelWatcher(socket: WebSocket): any {
 }
 
 function* watchOutgoingMessages(socket: WebSocket, thisDevice: Device): any {
-    yield takeEvery('SEND_MESSAGE', function* (action: PayloadAction<WebSocketTextMessage>) {
-        const payload: WebSocketTextMessage = action.payload;
-        const dataToStore = { destinationDeviceId: payload.destinationDeviceId, destinationIp: payload.destinationIp, msgData: payload.data[0] };
-        const dataToSend = {
-            ...dataToStore,
-            msgData: payload.data,
-            sourceDeviceId: thisDevice.deviceId,
-            sourceIp: thisDevice.ipAddr,
-            requiresResponse: true,
-            type: "request"
-        }
+    yield takeEvery('SEND_MESSAGE', function* (action: PayloadAction<TextToSaga>) {
+        const { sendTo, data } = action.payload;
+        const dataToStore: StorableMessage = buildStorableMessage(sendTo, data);
+        const dataToSend: TextMessageToServer = buildTextMessage(sendTo, thisDevice, [data]);
         yield apply(socket, socket.send, [JSON.stringify(dataToSend)])
         yield put(addMessage(dataToStore));
     });
-    yield takeEvery('SEND_COMMAND', function* (action: PayloadAction<Command>) {
-        let payload = {
-            ...action.payload,
-            type: "request"
-        }
-        yield apply(socket, socket.send, [JSON.stringify(payload)]);
+    yield takeEvery('SEND_COMMAND', function* (action: PayloadAction<CommandToSaga>) {
+        const { sendTo, data } = action.payload;
+        const commToSend: TextMessageToServer = buildCommandMessage(sendTo, thisDevice, data);
+        yield apply(socket, socket.send, [JSON.stringify(commToSend)]);
     });
 }
 
 function* watchConnections(socket: WebSocket, thisDevice: Device): any {
-    yield takeEvery('ADD_CONNECTION', function* (action: PayloadAction<ConnectedDevice>) {
-        const payload: ConnectedDevice = action.payload;
-        const dataToSend = { type: "request", destinationDeviceId: payload.device.deviceId, destinationIp: payload.device.ipAddr, sourceDeviceId: thisDevice.deviceId, sourceIp: thisDevice.ipAddr, msgData: [] };
+    yield takeEvery('ADD_CONNECTION', function* (action: PayloadAction<TextToSaga>) {
+        const { sendTo } = action.payload;
+        const dataToSend: TextMessageToServer = buildTextMessage(sendTo, thisDevice, []);
         yield apply(socket, socket.send, [JSON.stringify(dataToSend)]);
-        yield put(addConnection({ ...payload, isActive: true }));
     });
 }
 
@@ -113,7 +95,7 @@ function* handleWebsocket(url: string): any {
     try {
         const socket = yield call(createWebsocketConn, url);
         yield put(wsConnect());
-        const thisDevice: Device = yield select((state: RootState) => state.device.devices.find(dev => dev.name === 'this'));
+        const thisDevice: Device = yield select((state: RootState) => state.device.devices.find(dev => dev.name === getFromDump(THIS_DEVICE_NAME)));
         // listen for incoming & outgoing messages
         yield fork(channelWatcher, socket);
         yield fork(watchConnections, socket, thisDevice);

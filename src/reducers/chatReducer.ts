@@ -8,16 +8,16 @@ export type MessageData = {
     delivered: boolean
 }
 
-export type Command = {
-    destinationDeviceId: string,
-    destinationIp: string,
-    command: "DISCOVER_PEERS" | "STOP_DISCOVERY"
-}
-
 export type WebSocketTextMessage = {
     destinationDeviceId: string,
     destinationIp: string,
     data: MessageData[]
+}
+
+export type StorableMessage = {
+    destinationDeviceId: string,
+    msgData: MessageData,
+    destinationIp: string
 }
 
 type TextMessages = {
@@ -33,7 +33,7 @@ const chatSlice = createSlice({
     name: "chat",
     initialState,
     reducers: {
-        addMessage: (state, action: PayloadAction<{ destinationDeviceId: string, msgData: MessageData, destinationIp?: string }>) => {
+        addMessage: (state, action: PayloadAction<StorableMessage>) => {
             const { destinationDeviceId, msgData, destinationIp } = action.payload;
             const existing = state.messages.find(
                 (msg) => msg.destinationDeviceId === destinationDeviceId
@@ -43,7 +43,7 @@ const chatSlice = createSlice({
             } else {
                 state.messages.push({
                     destinationDeviceId: destinationDeviceId,
-                    destinationIp: destinationIp || '',
+                    destinationIp: destinationIp,
                     data: [msgData],
                 });
             }
@@ -54,7 +54,7 @@ const chatSlice = createSlice({
                 (msg) => msg.destinationDeviceId === deviceId
             );
             let lastIndex = 0;
-            if(messageGroup?.data.length && messageGroup?.data.length > 0)
+            if (messageGroup?.data.length && messageGroup?.data.length > 0)
                 lastIndex = messageGroup?.data.length - 1;
             if (messageGroup?.data[lastIndex]) {
                 messageGroup.data[lastIndex].delivered = true;

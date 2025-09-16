@@ -5,14 +5,16 @@ import { useState, useEffect, useRef } from "react";
 import Headers from "../atoms/Headers";
 import { getCredentials } from "../network/networkClient";
 import { useDispatch } from "react-redux";
-import { addAllDevices } from "../reducers/deviceReducer";
-import type { ConnectedDevice } from "../reducers/connectionReducer";
+import { addAllDevices, type Device } from "../reducers/deviceReducer";
+import { dumpThis } from "../utils/dump";
+import { THIS_DEVICE_ID, THIS_DEVICE_IP, THIS_DEVICE_NAME } from "../constants/consants";
 
 const App = () => {
 
     const dispatch = useDispatch();
 
-    const [selectedChat, setSelectedChat] = useState<ConnectedDevice | null>(null);
+    const [selectedChat, setSelectedChat] = useState<Device | null>(null);
+    const [thisDevice, setThisDevice] = useState();
     const runOnceRef = useRef(false);
 
     useEffect(() => {
@@ -28,10 +30,14 @@ const App = () => {
             dispatch({ type: 'WS_START', payload: { url: url.toString() } });
             dispatch(addAllDevices({
                 devices: [
-                    { deviceId: cred.serverId, ipAddr: cred.serverIp, name: cred.name },
-                    { deviceId: cred.deviceId, ipAddr: url.hostname, name: 'this' }
+                    { deviceId: cred.serverId, ipAddr: cred.serverIp, name: cred.name, isConnected: true },
+                    { deviceId: cred.deviceId, ipAddr: url.hostname, name: cred.name, isConnected: true }
                 ]
-            }))
+            }));
+            dumpThis(THIS_DEVICE_IP, cred.serverIp);
+            dumpThis(THIS_DEVICE_ID, cred.serverId);
+            dumpThis(THIS_DEVICE_NAME, cred.name);
+            setThisDevice(cred.serverIp);
         });
     }, []);
 
@@ -39,7 +45,7 @@ const App = () => {
         <Box display='flex' >
             <Box display='flex' flexDirection='column' flex={1}>
                 <Headers text='Zappy' fontColor='primary' fontVariant='h5' noBorder />
-                <SideView setSelectedChat={setSelectedChat} />
+                {thisDevice && <SideView setSelectedChat={setSelectedChat} />}
             </Box>
             <ChatView selectedChat={selectedChat} />
         </Box>

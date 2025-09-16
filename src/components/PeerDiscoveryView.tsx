@@ -5,16 +5,19 @@ import LaptopIcon from '@mui/icons-material/Laptop';
 import CircleIcon from '@mui/icons-material/Circle';
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../stores/store";
+import type { TextToSaga } from "../utils/types";
 
 const PeerDiscoveryView = ({
-    handleClose
+    handleClose,
+    thisDevice
 }: any) => {
 
     const devices = useSelector((state: RootState) => state.device.devices);
     const dispatch = useDispatch();
 
     const onClickDevice = (index: number) => {
-        dispatch({type: 'ADD_CONNECTION', payload: {device: devices[index]}});
+        const payload: TextToSaga = {sendTo: devices[index], data: {sender: 'me', delivered: false, payload: ''}};
+        dispatch({type: 'ADD_CONNECTION', payload: payload});
         handleClose();
     }
 
@@ -38,7 +41,7 @@ const PeerDiscoveryView = ({
                 mt: 2
             }}>
                 {
-                    devices.map((key, idx) => {
+                    devices.filter(dev => dev.ipAddr !== thisDevice).map((key, idx) => {
                         return (
                             <>
                                 <ListItem key={idx} onClick={() => onClickDevice(idx)} alignItems="center" sx={{

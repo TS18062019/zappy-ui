@@ -10,43 +10,53 @@ import {
     Fab,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import EmptySideView from "../pages/EmptySideView";
 import PeerDiscoveryView from "./PeerDiscoveryView";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../stores/store";
-import type { ConnectedDevice } from "../reducers/connectionReducer";
-
-// const data: any[] = [
-//     { id: 1, a: 'Brunch this weekend?', b: 'Ali Connors', c: ' — I\'ll be in your neighborhood doing errands this…' },
-//     { id: 2, a: 'Summer BBQ', b: 'to Scott, Alex, Jennifer', c: ' — Do you have Paris recommendations? Have you ever…' },
-// ]
+import type { Device } from "../reducers/deviceReducer";
+import { getFromDump } from "../utils/dump";
+import { THIS_DEVICE_IP } from "../constants/consants";
+import type { CommandToSaga } from "../utils/types";
 
 const SideView = ({
     setSelectedChat
-}: {setSelectedChat: React.Dispatch<React.SetStateAction<ConnectedDevice | null>>}) => {
+}: { setSelectedChat: React.Dispatch<React.SetStateAction<Device | null>> }) => {
 
+    const thisDeviceRef = useRef(getFromDump(THIS_DEVICE_IP));
     const [peerDiscoveryStarted, setPeerDiscoveryStarted] = useState(false);
-    const server = useSelector((state: RootState) => state.device.devices.find(s => s.name === 'server'));
-    const connections = useSelector((state: RootState) => state.connection.connections);
-
+    const server = useSelector((state: RootState) => state.device.devices.find(s => s.ipAddr === thisDeviceRef.current));
+    // remove self ui & server from list
+    const connectedDevices = useSelector((state: RootState) => state.device.devices.filter(dev => dev.isConnected && dev.ipAddr !== thisDeviceRef.current));
+    console.log('server', server);
+    console.log('cd', connectedDevices);
+    console.log('thisDevice', thisDeviceRef.current);
     const dispatch = useDispatch();
 
     const stopPeerDiscovery = () => {
-        dispatch({ type: 'SEND_COMMAND', payload: { destinationDeviceId: server?.deviceId, destinationIp: server?.ipAddr, command: 'STOP_DISCOVERY' } });
-        setPeerDiscoveryStarted(false);
+        console.log('stopping discovery...');
+        if (server) {
+            const payload: CommandToSaga = { sendTo: server, data: "STOP_DISCOVERY" };
+            dispatch({ type: 'SEND_COMMAND', payload: payload });
+            setPeerDiscoveryStarted(false);
+        }
     }
 
     const startPeerDiscovery = () => {
-        dispatch({ type: 'SEND_COMMAND', payload: { destinationDeviceId: server?.deviceId, destinationIp: server?.ipAddr, command: 'DISCOVER_PEERS' } });
-        setPeerDiscoveryStarted(true);
+        console.log('starting discovery...');
+        if (server) {
+            const payload: CommandToSaga = { sendTo: server, data: "DISCOVER_PEERS" };
+            dispatch({ type: 'SEND_COMMAND', payload: payload });
+            setPeerDiscoveryStarted(true);
+        }
     }
 
     const getChatSideview = () => {
         return (
             <>
                 {
-                    connections.length > 0 ? (
+                    thisDeviceRef.current && connectedDevices.length > 0 ? (
                         <List sx={{
                             height: "100%", overflowY: "auto", /* Hide scrollbar for Chrome, Safari, Edge */
                             "&::-webkit-scrollbar": { display: "none" },
@@ -57,10 +67,10 @@ const SideView = ({
                             flex: 1
                         }}>
                             {
-                                connections.map((key, idx) => {
+                                connectedDevices.map((key, idx) => {
                                     return (
                                         <>
-                                            <ListItem onClick={() => setSelectedChat(connections[idx])} key={idx} alignItems="flex-start" sx={{
+                                            <ListItem onClick={() => setSelectedChat(connectedDevices[idx])} key={idx} alignItems="flex-start" sx={{
                                                 transition: "all 0.2s ease",
                                                 "&:hover": {
                                                     bgcolor: "grey.100",
@@ -74,14 +84,14 @@ const SideView = ({
                                                     <Avatar alt="Remy Sharp" />
                                                 </ListItemAvatar>
                                                 <ListItemText
-                                                    primary={key.device.name}
+                                                    primary={key.name}
                                                     secondary={
                                                         <Typography
                                                             component="span"
                                                             variant="body2"
                                                             sx={{ color: "text.primary", display: "inline" }}
                                                         >
-                                                            {key.device.ipAddr}
+                                                            {key.ipAddr}
                                                         </Typography>
                                                     }
                                                 />
@@ -120,7 +130,7 @@ const SideView = ({
                 !peerDiscoveryStarted ? (
                     getChatSideview()
                 ) : (
-                    <PeerDiscoveryView handleClose={stopPeerDiscovery} />
+                    <PeerDiscoveryView handleClose={stopPeerDiscovery} thisDevice={thisDeviceRef.current}/>
                 )
             }
 

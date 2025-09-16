@@ -12,15 +12,16 @@ import type { RootState } from "../stores/store";
 import { type MessageData } from "../reducers/chatReducer";
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import type { ConnectedDevice } from "../reducers/connectionReducer";
+import type { Device } from "../reducers/deviceReducer";
+import type { TextToSaga } from "../utils/types";
 
 export default function ChatView({
     selectedChat
-}: { selectedChat: ConnectedDevice | null }) {
+}: { selectedChat: Device | null }) {
 
     const messages = useSelector((state: RootState) => {
         const device = state.chat.messages.find(
-            msg => msg.destinationDeviceId === selectedChat?.device.deviceId
+            msg => msg.destinationDeviceId === selectedChat?.deviceId
         );
         return device?.data || [];
     });
@@ -32,7 +33,10 @@ export default function ChatView({
 
     const handleSend = () => {
         if (!input.trim()) return;
-        dispatch({ type: 'SEND_MESSAGE', payload: { destinationDeviceId: selectedChat?.device.deviceId, destinationIp: selectedChat?.device.ipAddr, data: [{ sender: 'me', payload: input, delivered: false }] } });
+        if (selectedChat) {
+            const payload: TextToSaga = { sendTo: selectedChat, data: {sender: 'me', delivered: false, payload: input} };
+            dispatch({ type: 'SEND_MESSAGE', payload: payload });
+        }
         setInput("");
     };
 
@@ -60,9 +64,9 @@ export default function ChatView({
     }
 
     return (
-        selectedChat?.device ? (
+        selectedChat ? (
             <Box flex={4} sx={{ border: '1px solid #f2e7e7' }}>
-                <Headers text={selectedChat.device.name} />
+                <Headers text={selectedChat.name} />
                 <Box
                     display="flex"
                     flexDirection="column"
