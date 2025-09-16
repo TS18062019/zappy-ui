@@ -17,18 +17,20 @@ import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../stores/store";
 import type { Device } from "../reducers/deviceReducer";
 import { getFromDump } from "../utils/dump";
-import { THIS_DEVICE_IP } from "../constants/consants";
+import { SERVER_ID, THIS_DEVICE_ID, THIS_DEVICE_IP } from "../constants/consants";
 import type { CommandToSaga } from "../utils/types";
 
 const SideView = ({
     setSelectedChat
 }: { setSelectedChat: React.Dispatch<React.SetStateAction<Device | null>> }) => {
 
-    const thisDeviceRef = useRef(getFromDump(THIS_DEVICE_IP));
+    const thisDeviceRef = useRef(getFromDump(THIS_DEVICE_ID));
+    const thisDeviceIp = useRef(getFromDump(THIS_DEVICE_IP));
+    const serverRef = useRef(getFromDump(SERVER_ID));
     const [peerDiscoveryStarted, setPeerDiscoveryStarted] = useState(false);
-    const server = useSelector((state: RootState) => state.device.devices.find(s => s.ipAddr === thisDeviceRef.current));
+    const server = useSelector((state: RootState) => state.device.devices.find(s => s.deviceId === serverRef.current));
     // remove self ui & server from list
-    const connectedDevices = useSelector((state: RootState) => state.device.devices.filter(dev => dev.isConnected && dev.ipAddr !== thisDeviceRef.current));
+    const connectedDevices = useSelector((state: RootState) => state.device.devices.filter(dev => dev.isConnected && dev.ipAddr !== thisDeviceIp.current));
     console.log('server', server);
     console.log('cd', connectedDevices);
     console.log('thisDevice', thisDeviceRef.current);
@@ -130,7 +132,7 @@ const SideView = ({
                 !peerDiscoveryStarted ? (
                     getChatSideview()
                 ) : (
-                    <PeerDiscoveryView handleClose={stopPeerDiscovery} thisDevice={thisDeviceRef.current}/>
+                    <PeerDiscoveryView handleClose={stopPeerDiscovery} thisDevice={thisDeviceIp.current}/>
                 )
             }
 

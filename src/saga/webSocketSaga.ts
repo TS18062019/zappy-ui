@@ -4,7 +4,7 @@ import { addMessage, markDelivered, type StorableMessage } from "../reducers/cha
 import { wsConnect, wsDisconnect } from "../reducers/webSocketReducer";
 import { createWebsocketConn } from "../network/websocketClient";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import { addAllDevices, addDevice, type Device, type DeviceList } from "../reducers/deviceReducer";
+import { addAllDevices, addDevice, markConnected, type Device, type DeviceList } from "../reducers/deviceReducer";
 import type { RootState } from "../stores/store";
 import type { CommandToSaga, TextMessageToServer, TextResponseFromServer, TextToSaga } from "../utils/types";
 import { buildCommandMessage, buildDeviceFromTextMessage, buildDeviceListFromIncomingPeers, buildStorableMessage, buildTextMessage } from "../utils/utils";
@@ -88,7 +88,7 @@ function* watchConnections(socket: WebSocket, thisDevice: Device): any {
         const { sendTo } = action.payload;
         const dataToSend: TextMessageToServer = buildTextMessage(sendTo, thisDevice, []);
         yield apply(socket, socket.send, [JSON.stringify(dataToSend)]);
-        yield put(addDevice(sendTo));
+        yield put(markConnected({deviceId: sendTo.deviceId}));
     });
 }
 

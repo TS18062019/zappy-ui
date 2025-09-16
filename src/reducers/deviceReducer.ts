@@ -20,9 +20,9 @@ const initialData: DeviceList = {
 const deviceSlice = createSlice({
     name: "device",
     initialState: initialData,
-    reducers:{
+    reducers: {
         addDevice: (state, action: PayloadAction<Device>) => {
-            if(!state.devices.find(d => d.deviceId === action.payload.deviceId))
+            if (!state.devices.find(d => d.deviceId === action.payload.deviceId))
                 state.devices.push(action.payload);
         },
         removeDevice: (state, action: PayloadAction<Device>) => {
@@ -31,15 +31,17 @@ const deviceSlice = createSlice({
         },
         addAllDevices: (state, action: PayloadAction<DeviceList>) => {
             const existingIds = state.devices.map(i => i.deviceId);
-            for(const dev of action.payload.devices) {
-                if(!existingIds.includes(dev.ipAddr))
+            for (const dev of action.payload.devices) {
+                if (!existingIds.includes(dev.deviceId))
                     state.devices.push(dev);
             }
         },
-        markConnected: (state, action: PayloadAction<{deviceId: string}>) => {
-            const obj = state.devices.find(dev => dev.deviceId === action.payload.deviceId);
-            if(obj)
-                obj.isConnected = true;
+        markConnected: (state, action: PayloadAction<{ deviceId: string }>) => {
+            state.devices = state.devices.map(dev =>
+                dev.deviceId === action.payload.deviceId
+                    ? { ...dev, isConnected: true }
+                    : dev
+            );
         }
     }
 })

@@ -7,7 +7,7 @@ import { getCredentials } from "../network/networkClient";
 import { useDispatch } from "react-redux";
 import { addAllDevices, type Device } from "../reducers/deviceReducer";
 import { dumpThis } from "../utils/dump";
-import { THIS_DEVICE_ID, THIS_DEVICE_IP, THIS_DEVICE_NAME } from "../constants/consants";
+import { SERVER_ID, THIS_DEVICE_ID, THIS_DEVICE_IP, THIS_DEVICE_NAME } from "../constants/consants";
 
 const App = () => {
 
@@ -35,8 +35,9 @@ const App = () => {
                 ]
             }));
             dumpThis(THIS_DEVICE_IP, cred.serverIp);
-            dumpThis(THIS_DEVICE_ID, cred.serverId);
+            dumpThis(THIS_DEVICE_ID, cred.deviceId);
             dumpThis(THIS_DEVICE_NAME, cred.name);
+            dumpThis(SERVER_ID, cred.serverId);
             setThisDevice(cred.serverIp);
         });
     }, []);
