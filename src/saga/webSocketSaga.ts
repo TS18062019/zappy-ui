@@ -9,7 +9,7 @@ import type { RootState } from "../stores/store";
 import type { CommandToSaga, TextMessageToServer, TextResponseFromServer, TextToSaga } from "../utils/types";
 import { buildCommandMessage, buildDeviceFromTextMessage, buildDeviceListFromIncomingPeers, buildStorableMessage, buildTextMessage } from "../utils/utils";
 import { getFromDump } from "../utils/dump";
-import { THIS_DEVICE_NAME } from "../constants/consants";
+import { THIS_DEVICE_ID, THIS_DEVICE_NAME } from "../constants/consants";
 
 function createSocketChannel(socket: WebSocket) {
     return eventChannel(emit => {
@@ -96,7 +96,7 @@ function* handleWebsocket(url: string): any {
     try {
         const socket = yield call(createWebsocketConn, url);
         yield put(wsConnect());
-        const thisDevice: Device = yield select((state: RootState) => state.device.devices.find(dev => dev.name === getFromDump(THIS_DEVICE_NAME)));
+        const thisDevice: Device = yield select((state: RootState) => state.device.devices.find(dev => dev.deviceId === getFromDump(THIS_DEVICE_ID)));
         // listen for incoming & outgoing messages
         yield fork(channelWatcher, socket);
         yield fork(watchConnections, socket, thisDevice);
