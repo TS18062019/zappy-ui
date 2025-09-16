@@ -30,10 +30,11 @@ const deviceSlice = createSlice({
             state.devices = state.devices.filter(dev => dev.deviceId !== deviceId);
         },
         addAllDevices: (state, action: PayloadAction<DeviceList>) => {
-            state.devices = [
-                ...state.devices,
-                ...action.payload.devices
-            ]
+            const existingIds = state.devices.map(i => i.deviceId);
+            for(const dev of action.payload.devices) {
+                if(!existingIds.includes(dev.ipAddr))
+                    state.devices.push(dev);
+            }
         },
         markConnected: (state, action: PayloadAction<{deviceId: string}>) => {
             const obj = state.devices.find(dev => dev.deviceId === action.payload.deviceId);

@@ -88,6 +88,7 @@ function* watchConnections(socket: WebSocket, thisDevice: Device): any {
         const { sendTo } = action.payload;
         const dataToSend: TextMessageToServer = buildTextMessage(sendTo, thisDevice, []);
         yield apply(socket, socket.send, [JSON.stringify(dataToSend)]);
+        yield put(addDevice(sendTo));
     });
 }
 
